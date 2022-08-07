@@ -4,20 +4,22 @@ import numpy as np
 
 class Perceptron():
     
-    # instantiate input, weights and bias
+    # instantiate class parameters
     def __init__(self, size):
         np.random.seed(42)
         self.size = size                    # number of inputs
         self.w = np.random.rand(size, 1)    # weights
         self.b = np.random.rand(1)          # bias
+        self.lr = 0.05                      # learning rate
+        self.epochs = 100                   # number of epochs
         
     """
-    Do i want to save training X,Y
+    Do i want to save training X,Y ???
     # load training dataset
-    def get_train_dataset(self, X_train, Y_train):
+    def get_train_dataset(self, X_train, Y_true):
         self.X_train = X_train              # training input
-        self.Y_train = Y_train              # training output
-        # !!! chech the shape
+        self.Y_true = Y_true              # true output of the training samples
+        # ! ! ! chech the shape
         pass
     """
     
@@ -32,7 +34,21 @@ class Perceptron():
         return self.activation(z)
     
     # back-propagation
-    def propagation(self, x, y_true):
-        w_err = x * (y_true - self.forward(x)) * self.activation(x) * (1 - self.activation(x))  
-        self.w += w_err
+    def propagation(self, x, y, y_true):
+        w_err = x * (y_true - y) * y * (1 - y)  
+        self.w += w_err * self.lr
     
+    # training
+    def training(self, X_train, Y_true):
+        n_train = len(X_train)
+        for i in self.epochs:
+            for j in n_train:
+                x = np.copy(X_train[j, :])
+                y_true = np.copy(Y_true[j])
+                y = self.forward(x)
+                self.propagation(x, y, y_true)                
+
+    # predicting function
+    def predict(self, x):
+        y = self.forward(x)
+        return y    
