@@ -5,13 +5,13 @@ import numpy as np
 class Perceptron():
     
     # instantiate class parameters
-    def __init__(self, size):
-        np.random.seed(42)
+    def __init__(self, size, epochs = 10000, lr = 0.1, seed = 7):
+        np.random.seed(seed)                # seed
         self.size = size                    # number of inputs
         self.w = np.random.rand(size)       # weights
         self.b = np.random.rand(1)          # bias
-        self.lr = 0.05                      # learning rate
-        self.epochs = 10                    # number of epochs
+        self.lr = lr                        # learning rate
+        self.epochs = epochs                # number of epochs
 
 
     """    
@@ -51,13 +51,13 @@ class Perceptron():
         n_train = len(X_train)
         n_epochs = self.epochs
         for i in range(n_epochs):
-            print("\n\nThe weights and bias after {}/{} epochs are: \nw = {}, b = {}".format(i, self.epochs, self.w.T, self.b))
+            #print("\n\nThe weights and bias after {}/{} epochs are: \nw = {}, b = {}".format(i, self.epochs, self.w.T, self.b))
             for j in range(n_train):
                 x = np.copy(X_train[j])
                 y_true = np.copy(Y_true[j])
                 y = self.forward(x)
                 self.propagation(x, y, y_true)
-                print("\nThe weights and bias after {}/{} training samples are: \nw = {}, b = {}".format(j, n_train, self.w.T, self.b))
+                #print("\nThe weights and bias after {}/{} training samples are: \nw = {}, b = {}".format(j, n_train, self.w.T, self.b))
         
 
     # predicting function

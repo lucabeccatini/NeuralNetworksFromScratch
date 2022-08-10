@@ -3,6 +3,7 @@ import NNP
 
 
 # define the perceptron and the number of input variables
+# default values are: epochs = 10000, lr = 0.1, seed = 7
 perp = NNP.Perceptron(3)
 
 # load training samples
@@ -21,3 +22,5 @@ perp.training(X_train, Y_train)
 # predict 
 x = np.array([1, 0, 0])
 perp.predict(x)
+
+
