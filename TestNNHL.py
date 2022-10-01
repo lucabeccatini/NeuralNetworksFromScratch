@@ -1,4 +1,4 @@
-import numpy as np 
+import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn import datasets
@@ -7,9 +7,9 @@ from sklearn import datasets
 
 # test that wheight and inout multiply correctly (w for 3 layers not correct)
 
+##################################################
 # test NNHL with keras comparing the results
-
-
+##################################################
 
 # create training samples
 np.random.seed(7) 
@@ -20,7 +20,6 @@ for i in range(len(X_train)):
 plt.figure(figsize = (20, 14)) 
 plt.scatter(X_train[:,0], X_train[:,1], c = y_data, cmap = plt.cm.Spectral)
 
-
 # create the nn
 model = tf.keras.Sequential([
     tf.keras.layers.Dense(2, activation='sigmoid', input_shape = (2,)),
@@ -28,7 +27,7 @@ model = tf.keras.Sequential([
 
 # loss function and compile the model 
 Y_pred = model(X_train[:1]).numpy()
-loss_fn = loss=tf.keras.losses.BinaryCrossentropy(from_logits=False) #(Y_train, Y_pred)
+loss_fn = loss=tf.keras.losses.BinaryCrossentropy(from_logits=False)
 model.compile(optimizer='adam', loss=loss_fn, metrics=['accuracy'])
 
 #training
