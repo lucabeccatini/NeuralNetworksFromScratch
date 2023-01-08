@@ -26,6 +26,7 @@ class NeuralNetwork():
             # Xavier 
             #self.w[self.ind_w([i, 0, 0]):self.ind_w([i+1, 0, 0])] = np.random.normal(0, 1/self.layers[i-1], self.ind_w([i+1, 0, 0])-self.ind_w([i, 0, 0]))
         self.activation = ['relu', 'sigmoid']
+        self.loss_train, self.loss_val = np.zeros(0), np.zeros(0)        
 
 
     # index of bias
@@ -287,13 +288,13 @@ class NeuralNetwork():
 
     # training and evaluation
     def fit(self, X_train, Y_train, X_val, Y_val, epochs, batch_size=100, learn_rate=0.01, patience=10, min_improvement=0, shuffle=True):
+        self.loss_train, self.loss_val = np.zeros(epochs), np.zeros(epochs)        
         n_train = len(X_train)
         n_val = len(X_val)
         self.epochs = epochs
         self.lr = learn_rate
         n_batch = n_train // batch_size
         not_improved = 0                                             # counter to interrupt training
-        loss_train, loss_val = np.zeros(epochs), np.zeros(epochs)        
         i_best = 0                                                   # to save the best model
         corr_w = np.zeros(len(self.w))                               # to add the corrections to weights at the end of the batch
         corr_b = np.zeros(len(self.b))                               # to add the corrections to biases at the end of the batch
@@ -320,7 +321,7 @@ class NeuralNetwork():
                         self.propagation(y_train) 
                         corr_w += self.w_error 
                         corr_b += self.b_error 
-                        loss_train[i_epoch] += self.loss_func(y_train) 
+                        self.loss_train[i_epoch] += self.loss_func(y_train) 
                 elif (i_n_batch == n_batch):
                     for i_batch in range(n_train % batch_size):
                         x_train = np.copy(X_train[i_n_batch*batch_size+i_batch])
@@ -329,7 +330,7 @@ class NeuralNetwork():
                         self.propagation(y_train)
                         corr_w += self.w_error
                         corr_b += self.b_error
-                        loss_train[i_epoch] += self.loss_func(y_train) 
+                        self.loss_train[i_epoch] += self.loss_func(y_train) 
                 ##### corr_w and b need to be renormalized???
                 self.w -= corr_w * self.lr
                 self.b -= corr_b * self.lr
@@ -337,13 +338,13 @@ class NeuralNetwork():
             for i_val in range(n_val):
                 self.predict(X_val[i_val])
                 y_val =  np.copy(Y_val[i_val])
-                loss_val[i_epoch] += self.loss_func(y_val)
-            loss_train[i_epoch] = loss_train[i_epoch] / n_train
-            loss_val[i_epoch] = loss_val[i_epoch] / n_val
-            print("Epoch: {}/{}  ,  training loss: {}  ,  validation loss: {}".format(i_epoch+1, epochs, loss_train[i_epoch], loss_val[i_epoch]))
-            if ((loss_val[i_epoch-1]-loss_val[i_epoch]) > min_improvement):
+                self.loss_val[i_epoch] += self.loss_func(y_val)
+            self.loss_train[i_epoch] = self.loss_train[i_epoch] / n_train
+            self.loss_val[i_epoch] = self.loss_val[i_epoch] / n_val
+            print("Epoch: {}/{}  ,  training loss: {}  ,  validation loss: {}".format(i_epoch+1, epochs, self.loss_train[i_epoch], self.loss_val[i_epoch]))
+            if ((self.loss_val[i_epoch-1]-self.loss_val[i_epoch]) > min_improvement):
                 #not_improved = 0
-                if(loss_val[i_epoch] < loss_val[i_best]):
+                if(self.loss_val[i_epoch] < self.loss_val[i_best]):
                     wgt_best = self.w                                # to save the best weights
                     i_best = i_epoch
             else:
@@ -352,8 +353,8 @@ class NeuralNetwork():
                     self.w = wgt_best
                     print("\nTraining early stopped")
                     break 
-        #plt.plot(loss_train, color='blue', label="train loss")
-        #plt.plot(loss_val, color='red', label="validation loss")
+        #plt.plot(self.loss_train, color='blue', label="train loss")
+        #plt.plot(self.loss_val, color='red', label="validation loss")
         #plt.title('model loss')
         #plt.ylabel('loss')
         #plt.xlabel('epoch')
@@ -362,28 +363,4 @@ class NeuralNetwork():
 
 
 
-"""
-    def forward(self, X):
-        sum = np.zeros(len(self.layers)+1)       # number of total ind up to each layer
-        prod = np.zeros(len(self.layers))        # number of total weights up to each layer
-        for i in range(len(self.layers)):
-            sum[i+1] = self.layers[i] + sum[i]
-            if (i>0):
-                prod[i] = self.layers[i-1]*self.layers[i] + prod[i-1]
-        sum = sum.astype(int)
-        prod = prod.astype(int)
-        L = np.zeros(sum[len(self.layers)-1])
-        y = np.empty(self.layers[len(self.layers)-1])
-        L[0: self.layers[0]] = X
-        for i in range(1, len(self.layers)):
-            for j in range(self.layers[i]):
-                if(i==(len(self.layers)-1)):
-                    y[j] = np.sum(L[sum[i-1]:sum[i]] * self.w[prod[i-1]+j*self.layers[i-1]:prod[i-1]+(j+1)*self.layers[i-1]]) + self.b[sum[i]+j]
-                else:
-                    L[sum[i]+j] = np.sum(L[sum[i-1]:sum[i]] * self.w[prod[i-1]+j*self.layers[i-1]:prod[i-1]+(j+1)*self.layers[i-1]]) + self.b[sum[i]+j]
-        self.nodes = L
-        self.y_pred = y
-        return
-
-"""
 
