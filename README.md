@@ -217,7 +217,7 @@ X_train[[3]] = [0, 1, 0],    Y_train[[3]] = 1
 <img src="Images/test1_6.png" align="center" width="700" height="auto"/>
 
 
-\
+
 ### Test 2
 The second test is a classification problem which uses the make_moons dataset of sklearn. 
 In these examples, the activation functions used are: relu for the hidden layers and sigmoid for the output layer. Also here, the Keras optimizer used is SGD to have the regular gradient descent as in the case of the NNFS. The neural networks are trained with the generated dataset and then they predict over a grid on the plot to show the decision regions. 
@@ -227,7 +227,7 @@ In the first example, the layers used are: [2, 2, 1]
 <img src="Images/Test2_train_2x2x1.png" align="center" width="400" height="auto"/>
 
 From the training plots, we can notice that the NNFS loss is smooth almost as the Keras loss but it decreases faster than the Keras loss. Moreover the training of the NNFS undergoes early stopping much earlier than Keras, even if they have the same patience and minimum improvement.
-\
+
 
 <img src="Images/Moons_2x2x1.png" align="center" width="400" height="auto"/>
 
@@ -271,9 +271,9 @@ As we can see, the training plots are similar for NNFS and Keras.
 \
 In the first histogram, we can see that the predictions are in agreement for both NNFS and Keras with the true outputs. Moreover the the predictions are very similar between them, except for some statistical fluctuations. The second histogram represents the distribution of the ratio between true values and the NNFS predictions respect the true values. It shows that NNFS has a good accuracy (highly populated for Y_true/Y_pred_NNFS about 1) in correspondence of the peak of Y_true and it has a lower accuracy for events with lower probability, like events with small weights. The third histogram represents the same distributions respect the Keras predictions and it is very similar to the NNFS prediction.
 
-<img src="Images/Test3_hist_5x64x64x1.png" align="center" width="500" height="auto"/>
+<img src="Images/Test3_plot_5x64x64x1.png" align="center" width="500" height="auto"/>
 
-\
+
 
 
 
