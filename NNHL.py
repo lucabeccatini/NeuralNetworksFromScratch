@@ -4,8 +4,7 @@ import matplotlib.pyplot as plt
 class NeuralNetwork():
     
     # instantiate class parameters
-    # consider only NN with equal layers size
-    def __init__(self, layers, seed=7):
+    def __init__(self, layers, seed=None):
         np.random.seed(seed)                                                     # seed
         self.lr = 0.01                                                           # learning rate 
         self.epochs = 100                                                          # number of epochs
@@ -14,8 +13,8 @@ class NeuralNetwork():
         n_bias = np.sum([layers[i] for i in range(1, len(layers))])          # number of total bias of nn
         n_weights = np.sum([layers[i]*layers[i+1] for i in range(len(layers)-1)])    # number of total weights of nn
 
-        self.b = np.zeros(n_bias)                                          # bias array
-        self.w = np.zeros(n_weights)
+        self.b = np.zeros(n_bias)                                          # biases array
+        self.w = np.zeros(n_weights)                                       # weights array
         self.n = np.zeros(layers[0]+n_bias)                                         # nodes values of last prediction, used for the back-propagation
         self.b_error = np.zeros(n_bias)                                          # corrections for biases of last prediction, used for the back-propagation
         self.w_error = np.zeros(n_weights)                                           # corrections for weights of last prediction, used for the back-propagation
@@ -30,6 +29,7 @@ class NeuralNetwork():
 
 
     # index of bias
+    # from self.bias index it returns self.b index
     def ind_b(self, ind):
         # ind[0]: layer index; ind[1]: node index
         if (len(ind)==2):
@@ -39,10 +39,10 @@ class NeuralNetwork():
                 ind_l = np.sum([self.layers[i] for i in range(1, ind[0])])               # sum of nodes in the previous layers
             ind_b = ind_l + ind[1]
             return ind_b
-        ###### add break error here
 
 
     # index of weights
+    # from self.weight index it returns self.w index
     def ind_w(self, ind):
         # ind[0]: layer index of the final node; ind[1]: initial node index; ind[2]: final node index
         if (len(ind)==3):
@@ -57,6 +57,7 @@ class NeuralNetwork():
 
 
     # index of node
+    # from self.node index it returns self.n index
     def ind_n(self, ind):
         # ind[0]: layer index; ind[1]: node index
         if (len(ind)==2):
@@ -288,7 +289,7 @@ class NeuralNetwork():
 
     # training and evaluation
     def fit(self, X_train, Y_train, X_val, Y_val, epochs, batch_size=100, learn_rate=0.01, patience=10, min_improvement=0, shuffle=True):
-        self.loss_train, self.loss_val = np.zeros(epochs), np.zeros(epochs)        
+        loss_t, loss_v = np.zeros(epochs), np.zeros(epochs)        
         n_train = len(X_train)
         n_val = len(X_val)
         self.epochs = epochs
@@ -321,8 +322,10 @@ class NeuralNetwork():
                         self.propagation(y_train) 
                         corr_w += self.w_error 
                         corr_b += self.b_error 
-                        self.loss_train[i_epoch] += self.loss_func(y_train) 
-                elif (i_n_batch == n_batch):
+                        loss_t[i_epoch] += self.loss_func(y_train) 
+                    corr_w /= n_batch
+                    corr_b /= n_batch
+                elif (i_n_batch == n_batch and (n_train%batch_size>0)):
                     for i_batch in range(n_train % batch_size):
                         x_train = np.copy(X_train[i_n_batch*batch_size+i_batch])
                         y_train = np.copy(Y_train[i_n_batch*batch_size+i_batch])
@@ -330,36 +333,36 @@ class NeuralNetwork():
                         self.propagation(y_train)
                         corr_w += self.w_error
                         corr_b += self.b_error
-                        self.loss_train[i_epoch] += self.loss_func(y_train) 
-                ##### corr_w and b need to be renormalized???
+                        loss_t[i_epoch] += self.loss_func(y_train) 
+                    corr_w /= (n_train % batch_size)
+                    corr_b /= (n_train % batch_size)
                 self.w -= corr_w * self.lr
                 self.b -= corr_b * self.lr
                 corr_w, corr_b = 0, 0
             for i_val in range(n_val):
                 self.predict(X_val[i_val])
                 y_val =  np.copy(Y_val[i_val])
-                self.loss_val[i_epoch] += self.loss_func(y_val)
-            self.loss_train[i_epoch] = self.loss_train[i_epoch] / n_train
-            self.loss_val[i_epoch] = self.loss_val[i_epoch] / n_val
-            print("Epoch: {}/{}  ,  training loss: {}  ,  validation loss: {}".format(i_epoch+1, epochs, self.loss_train[i_epoch], self.loss_val[i_epoch]))
-            if ((self.loss_val[i_epoch-1]-self.loss_val[i_epoch]) > min_improvement):
+                loss_v[i_epoch] += self.loss_func(y_val)
+            loss_t[i_epoch] = loss_t[i_epoch] / n_train
+            loss_v[i_epoch] = loss_v[i_epoch] / n_val
+            print("Epoch: {}/{}  ,  training loss: {}  ,  validation loss: {}".format(i_epoch+1, epochs, loss_t[i_epoch], loss_v[i_epoch]))
+            if ((loss_v[i_epoch-1]-loss_v[i_epoch]) > min_improvement):
                 #not_improved = 0
-                if(self.loss_val[i_epoch] < self.loss_val[i_best]):
+                if(loss_v[i_epoch] < loss_v[i_best]):
                     wgt_best = self.w                                # to save the best weights
                     i_best = i_epoch
             else:
                 not_improved += 1
                 if (not_improved >= patience):
                     self.w = wgt_best
+                    self.loss_train = np.array(loss_t[0:i_epoch+1])
+                    self.loss_val = np.array(loss_v[0:i_epoch+1])
                     print("\nTraining early stopped")
-                    break 
-        #plt.plot(self.loss_train, color='blue', label="train loss")
-        #plt.plot(self.loss_val, color='red', label="validation loss")
-        #plt.title('model loss')
-        #plt.ylabel('loss')
-        #plt.xlabel('epoch')
-        #plt.legend(['Train', 'Validation'], loc='best')
-        #plt.savefig("/home/lb_linux/NeuralNetworksFromScratch/train_NNFS.pdf")
+                    return 
+        self.loss_train = np.array(loss_t)
+        self.loss_val = np.array(loss_v)
+        return
+
 
 
 
