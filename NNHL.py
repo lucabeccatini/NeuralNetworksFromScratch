@@ -1,35 +1,64 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+
 class NeuralNetwork():
     
     # instantiate class parameters
     def __init__(self, layers, seed=None):
-        np.random.seed(seed)                                                     # seed
-        self.lr = 0.01                                                           # learning rate 
-        self.epochs = 100                                                          # number of epochs
+        
+        # seed
+        np.random.seed(seed)                               
+        
+        # learning rate
+        self.lr = 0.01                                      
+        
+        # number of epochs
+        self.epochs = 100                                  
 
-        self.layers = layers                                                     # layers strucure
-        n_bias = np.sum([layers[i] for i in range(1, len(layers))])          # number of total bias of nn
-        n_weights = np.sum([layers[i]*layers[i+1] for i in range(len(layers)-1)])    # number of total weights of nn
+        # layers framework
+        # layers = [A, B, .., F] represents a nn with: A inputs, B nodes in the first hidden layer, .., F outputs 
+        self.layers = layers                               
 
-        self.b = np.zeros(n_bias)                                          # biases array
-        self.w = np.zeros(n_weights)                                       # weights array
-        self.n = np.zeros(layers[0]+n_bias)                                         # nodes values of last prediction, used for the back-propagation
-        self.b_error = np.zeros(n_bias)                                          # corrections for biases of last prediction, used for the back-propagation
-        self.w_error = np.zeros(n_weights)                                           # corrections for weights of last prediction, used for the back-propagation
+        # number of total bias of nn
+        n_bias = np.sum([layers[i] for i in range(1, len(layers))])                      
+
+        # number of total weights of nn
+        n_weights = np.sum([layers[i]*layers[i+1] for i in range(len(layers)-1)])        
+
+        # biases array
+        self.b = np.zeros(n_bias)                          
+
+        # weights array
+        self.w = np.zeros(n_weights)                       
+
+        # nodes values of last prediction, used for the back-propagation
+        self.n = np.zeros(layers[0]+n_bias)                
+
+        # corrections for biases of last prediction, used for the back-propagation
+        self.b_error = np.zeros(n_bias)                    
+
+        # corrections for weights of last prediction, used for the back-propagation
+        self.w_error = np.zeros(n_weights)                 
+      
         # weights initialization
         for i in range(1, len(self.layers)):
             # heuristic 
             self.w[self.ind_w([i, 0, 0]):self.ind_w([i+1, 0, 0])] = np.random.normal(0, np.sqrt(2/self.layers[i-1]), self.ind_w([i+1, 0, 0])-self.ind_w([i, 0, 0])) 
             # Xavier 
             #self.w[self.ind_w([i, 0, 0]):self.ind_w([i+1, 0, 0])] = np.random.normal(0, 1/self.layers[i-1], self.ind_w([i+1, 0, 0])-self.ind_w([i, 0, 0]))
+
+        # activation functions
+        # activation[0]: activation for the hidden layers;   activation[1]: activation for the output layer
         self.activation = ['relu', 'sigmoid']
+
+        # loss function values arrays for training and validation
         self.loss_train, self.loss_val = np.zeros(0), np.zeros(0)        
 
 
     # index of bias
-    # from self.bias index it returns self.b index
+    # it takes index of self.bias as argument and it returns index of self.b
     def ind_b(self, ind):
         # ind[0]: layer index; ind[1]: node index
         if (len(ind)==2):
@@ -42,35 +71,35 @@ class NeuralNetwork():
 
 
     # index of weights
-    # from self.weight index it returns self.w index
+    # it takes index of self.weight as argument and it returns index of self.w
     def ind_w(self, ind):
-        # ind[0]: layer index of the final node; ind[1]: initial node index; ind[2]: final node index
+        # ind[0]: layer index of the final node; ind[1]: final node index; ind[2]: initial node index
         if (len(ind)==3):
             if (ind[0]==1):
                 ind_w = ind[1]*self.layers[ind[0]] + ind[2]
             elif (ind[0]==len(self.layers)):     # to avoid error self.layer[len(self.layers)]
                 ind_w = np.sum([self.layers[i]*self.layers[i+1] for i in range(len(self.layers)-1)]) 
             else:
-                ind_l = np.sum([self.layers[i]*self.layers[i+1] for i in range(ind[0]-1)])           # sum of nodes in the previous layers
+                ind_l = np.sum([self.layers[i]*self.layers[i+1] for i in range(ind[0]-1)])         # sum of nodes in the previous layers
                 ind_w = ind_l + ind[1]*self.layers[ind[0]] + ind[2]
             return ind_w
 
 
     # index of node
-    # from self.node index it returns self.n index
+    # it takes index of self.node as argument and it returns index of self.n
     def ind_n(self, ind):
         # ind[0]: layer index; ind[1]: node index
         if (len(ind)==2):
             if (ind[0]==0):
                 ind_l = 0
             elif (ind[0]==-1):
-                ind_l = np.sum([self.layers[i] for i in range(len(self.layers)-1)])               # sum of nodes in the previous layers
+                ind_l = np.sum([self.layers[i] for i in range(len(self.layers)-1)])      # sum of nodes in the previous layers
             elif (ind[0]>0): 
-                ind_l = np.sum([self.layers[i] for i in range(ind[0])])               # sum of nodes in the previous layers
+                ind_l = np.sum([self.layers[i] for i in range(ind[0])])        # sum of nodes in the previous layers
             ind_n = ind_l + ind[1]
             return ind_n
 
-
+ 
     def bias(self, ind): 
         # ind[0]: layer index; ind[1]: node index
         if (len(ind)==1):
@@ -92,7 +121,7 @@ class NeuralNetwork():
 
 
     def weight(self, ind):
-        # ind[0]: layer index; ind[1]: initial node index; ind[2]: final node index
+        # ind[0]: layer index; ind[1]: final node index; ind[2]: initial node index
         if (len(ind)==1):
             if (ind[0]==1):
                 ind_l = 0
@@ -163,7 +192,7 @@ class NeuralNetwork():
 
 
     def weight_error(self, ind):
-        # ind[0]: layer index; ind[1]: initial node index; ind[2]: final node index
+        # ind[0]: layer index; ind[1]: final node index; ind[2]: initial node index
         if (len(ind)==1):
             if (ind[0]==1):
                 ind_l = 0
@@ -196,14 +225,14 @@ class NeuralNetwork():
     # activation function
     # available: sigmoid, relu, linear
     def activation_func(self, z, i):
-        if (i==len(self.layers)-1):
+        if (i==len(self.layers)-1):              # output layer
             if (self.activation[1]=='sigmoid'):
                 res = 1 / (1 + np.exp(-z))
             elif (self.activation[1]=='relu'):
                 res = np.maximum(np.zeros_like(z), z)
             elif (self.activation[1]=='linear'):
                 res = z
-        else:
+        else:                                    # hidden layers
             if (self.activation[0]=='sigmoid'):
                 res = 1 / (1 + np.exp(-z))
             elif (self.activation[0]=='relu'):
@@ -238,7 +267,7 @@ class NeuralNetwork():
     # consider only mse loss function
     def loss_func(self, y_train):
         if (self.layers[-1]==1):
-            mse = (y_train - self.node([-1, 0]))**2
+            mse = (y_train - self.node([-1, 0]))**2 
         else:
             mse = 0
             for i in range(self.layers[-1]):
@@ -250,30 +279,28 @@ class NeuralNetwork():
     # partial derivative of the loss function respect the output layer
     # consider only mse loss function
     def der_loss(self, y_train):
-        #der = 2 * (y_train - self.node([-1]))
         der = 2 * (self.node([-1]) - y_train)
         return der
 
 
     # predictng function
     def predict(self, x_data):
-        self.forward(x_data)
+        self.for_propagation(x_data)
         return self.node([-1])
 
 
-    # feed-forward 
+    # forward propagation
     # the results are arrays: L, which contains all the hiddane layers nodes values (needed for propagation), and y, which are the outputs
-    def forward(self, X):
+    def for_propagation(self, X):
         self.n[0:self.ind_n([1, 0])] = X 
         for i in range(1, len(self.layers)):
             self.n[self.ind_n([i, 0]):self.ind_n([i+1, 0])] = self.activation_func( np.sum(self.node([i-1]) * self.weight([i]), axis=1) + self.bias([i]), i ) 
         return
 
 
-    # back-propagation
+    # backward propagation
     # use the chain rule to find the corrections to weights and bias
-    # the loss function is the mean squared error
-    def propagation(self, y_train):                                        # L, y, y_train are arrays
+    def back_propagation(self, y_train): 
         for i in reversed(range(1, len(self.layers))): 
             if (i==(len(self.layers)-1)):
                 self.b_error[self.ind_b([i, 0]):self.ind_b([i+1, 0])] = self.der_loss(y_train) * self.der_activation(self.node([i]), i)     # biases errors 
@@ -295,31 +322,28 @@ class NeuralNetwork():
         self.epochs = epochs
         self.lr = learn_rate
         n_batch = n_train // batch_size
-        not_improved = 0                                             # counter to interrupt training
-        i_best = 0                                                   # to save the best model
-        corr_w = np.zeros(len(self.w))                               # to add the corrections to weights at the end of the batch
-        corr_b = np.zeros(len(self.b))                               # to add the corrections to biases at the end of the batch
+        not_improved = 0                                   # counter to early stop training
+        i_best = 0                                         # to save the best model
+        corr_w = np.zeros(len(self.w))                     # to add the corrections to weights at the end of the batch
+        corr_b = np.zeros(len(self.b))                     # to add the corrections to biases at the end of the batch
 
-        if (shuffle==True):
+        if (shuffle==True):                                # to shuffle the training dataset at each epoch
             Y_train = np.reshape(Y_train, (len(Y_train), 1))
             XY_train = np.hstack((X_train, Y_train))
 
-        for i_epoch in range(epochs):                                # loop for each epoch
+        for i_epoch in range(epochs):                      # loop for each epoch
             if (shuffle==True):
                 np.random.shuffle(XY_train)
                 X_train = XY_train[:, :-1]
                 Y_train = XY_train[:, -1]
 
-            if (i_epoch>=52):
-                a = 0
-
-            for i_n_batch in range(n_batch+1):                        # loop for each batch
+            for i_n_batch in range(n_batch+1):             # loop for each batch
                 if (i_n_batch < n_batch):
-                    for i_batch in range(batch_size):                # loop for each event inside batch
-                        x_train = np.copy(X_train[i_n_batch*batch_size+i_batch])
+                    for i_batch in range(batch_size):      # loop for each event inside batch
+                        x_train = np.copy(X_train[i_n_batch*batch_size+i_batch]) 
                         y_train = np.copy(Y_train[i_n_batch*batch_size+i_batch])
-                        self.forward(x_train) 
-                        self.propagation(y_train) 
+                        self.for_propagation(x_train) 
+                        self.back_propagation(y_train) 
                         corr_w += self.w_error 
                         corr_b += self.b_error 
                         loss_t[i_epoch] += self.loss_func(y_train) 
@@ -329,8 +353,8 @@ class NeuralNetwork():
                     for i_batch in range(n_train % batch_size):
                         x_train = np.copy(X_train[i_n_batch*batch_size+i_batch])
                         y_train = np.copy(Y_train[i_n_batch*batch_size+i_batch])
-                        self.forward(x_train)
-                        self.propagation(y_train)
+                        self.for_propagation(x_train)
+                        self.back_propagation(y_train)
                         corr_w += self.w_error
                         corr_b += self.b_error
                         loss_t[i_epoch] += self.loss_func(y_train) 
@@ -347,9 +371,8 @@ class NeuralNetwork():
             loss_v[i_epoch] = loss_v[i_epoch] / n_val
             print("Epoch: {}/{}  ,  training loss: {}  ,  validation loss: {}".format(i_epoch+1, epochs, loss_t[i_epoch], loss_v[i_epoch]))
             if ((loss_v[i_epoch-1]-loss_v[i_epoch]) > min_improvement):
-                #not_improved = 0
                 if(loss_v[i_epoch] < loss_v[i_best]):
-                    wgt_best = self.w                                # to save the best weights
+                    wgt_best = self.w                      # to save the best weights
                     i_best = i_epoch
             else:
                 not_improved += 1

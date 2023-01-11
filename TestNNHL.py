@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
-import csv
 
 import NNHL
 
@@ -21,7 +20,7 @@ path = "/home/lb_linux/NeuralNetworksFromScratch"
 
 
 ##################################################
-# test 1: back-propagation NNFS vs keras
+# test 1: back-propagation NNFS vs Keras
 ##################################################
 
 if (test_1==True):

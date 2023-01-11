@@ -1,26 +1,45 @@
 import numpy as np
-import NNP
 
 
-# define the perceptron and the number of input variables
-# default values are: epochs = 10000, lr = 0.1, seed = 7
-perp = NNP.Perceptron(3)
 
-# load training samples
-X_train = np.array([ [0, 1, 0],
-            [0, 0, 1], 
-            [1, 0 ,0], 
-            [1, 1 ,0], 
-            [1, 1, 1], 
-            [0, 1, 1], 
-            [0, 1, 0] ])
-Y_train = np.array([1, 0, 0, 1, 1, 0, 1])
+class Perceptron():
+    
+    # instantiate class parameters
+    def __init__(self, size):
+        np.random.seed(42)
+        self.size = size                    # number of inputs
+        self.w = np.random.rand(size, 1)    # weights
+        self.b = np.random.rand(1)          # bias
+        self.lr = 0.05                      # learning rate
+        self.epochs = 100                   # number of epochs
 
-# train the perceptron
-perp.training(X_train, Y_train)
+    
+    # activation function
+    # consider only Sigmoid activation function
+    def activation(z):
+        return 1 / (1 + np.exp(-z))
+    
+    # feed-forward
+    def forward(self, x):
+        z = np.dot(x, self.w) + self.b
+        return self.activation(z)
+    
+    # back-propagation
+    def propagation(self, x, y, y_true):
+        w_err = x * (y_true - y) * y * (1 - y)  
+        self.w += w_err * self.lr
+    
+    # training
+    def training(self, X_train, Y_true):
+        n_train = len(X_train)
+        for i in self.epochs:
+            for j in n_train:
+                x = np.copy(X_train[j, :])
+                y_true = np.copy(Y_true[j])
+                y = self.forward(x)
+                self.propagation(x, y, y_true)                
 
-# predict 
-x = np.array([1, 0, 0])
-perp.predict(x)
-
-
+    # predicting function
+    def predict(self, x):
+        y = self.forward(x)
+        return y  

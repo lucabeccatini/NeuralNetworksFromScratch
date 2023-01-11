@@ -10,26 +10,27 @@ Create a neural network from scratch and test it comparing the results with Kera
 - [Implementations](#implementations)
     - [Requirements](#requirements)
     - [Getting started](#getting-started)
-    - [propagation method](#propagation-method)
+    - [back_propagation method](#back_propagation-method)
     - [fit method](#fit-method)
     - [Example](#example)
 - [TestNNHL](#testnnhl)
     - [Test 1](#test-1)
     - [Test 2](#test-2)
     - [Test 3](#test-3)
+- [Considerations](#considerations)
 
 
 ## About the project
 
 <img src="Images/nnsketch.png" align="center" width="300" height="auto"/>
 
-The image above represents a sketch of a simple neural network composed by the input layer, one hidden layer and the output layer, divided by different colors. Each circle represents a node, that is a mathematical function which receive the inputs from the previous layer and produce and output. The output of a node depends only on the inputs provided to it and and the parameters of the node. 
-The data flows from layer to layer until it reaches the output layer. At this point the loss function is computed respect the predicted output and its true value. The result describes error of the neural network in the prediction and it is used to update the parameters of the neural network.
+The image above represents a sketch of a simple neural network composed by the input layer, one hidden layer and the output layer, divided by different colors. Each circle represents a node, that is a mathematical function which receive the inputs from the previous layer and produce and output. The output of a node depends only on the inputs provided to it and and the parameters of the node. The data flows from layer to layer until it reaches the output layer. During the training of the neural network, the error of the predictions is measured through the loss function and its derivative is used to improve the parameters of the neural network.
+
 
 ### Forward propagation
 <img src="Images/forward.png" align="center" width="400" height="auto"/>
 
-The parameters of the neural networks are weights and biases. Each node has i weights and a bias, where i is the number of inputs (or nodes in the previous layer). In the forward propagation of a single node the weights are multiplied to the respective inputs and summed between them and the bias. Then the result is passed to the activation function which produces the result of the node.
+The parameters of the neural networks are weights and biases. Each node has i weights and one bias, where i is the number of inputs (or nodes in the previous layer). In the forward propagation of a single node the weights are multiplied to the respective inputs and summed between them and the bias. Then the result is passed to the activation function which produces the result of the node.
 
 ```
 inputs:
@@ -48,11 +49,11 @@ output:
 Y = activation(Z)    
 ```
 
-This process is done for the nodes of the first hidden layer and then the output of that layer becomes the input of the next layer up to the output layer.
+This process is done for the nodes of the first hidden layer and then the output of that layer becomes the input of the next layer, up to the final layer.
 
 
 ### Backward propagation
-Once computed the loss function, the neural network uses the gradient descent process to correct the parameters and minimize the loss function. In particular, to each parameter is subracted a correction which depends on the derivative of the loss function respect that parameter and a constant, called learning rate. The only loss function available at the moment is the mean squared error.
+After the foward propagation and the generation of the ouputs, the loss function is computed respect the predicted outputs and their true value. Then, the neural network uses the gradient descent process to correct the parameters and minimize the loss function. In particular, to each parameter is subracted a correction which depends on the derivative of the loss function respect that parameter and a constant, called learning rate. The only loss function available at the moment is the mean squared error.
 
 ```
 learning rate:
@@ -74,8 +75,8 @@ corr_b = d(loss)/d(b)
 
 where:
 d(loss)/d(Y)   is the partial derivative of the loss function respect the output
-d(Y)/d(Z)   is the partial derivative of the output respect the pre-activation node
-d(Z)/d(b)   is the partial derivative of the pre-activation node respect the bias
+d(Y)/d(Z)      is the partial derivative of the output respect the pre-activation node
+d(Z)/d(b)      is the partial derivative of the pre-activation node respect the bias
 
 corr_w_k = d(loss)/d(w_k)
        = d(loss)/d(Y) * d(Y)/d(Z) * d(Z)/d(w_k)
@@ -86,15 +87,56 @@ d(Z)/d(w_k) = x_k
 => corr_b = d(loss)/d(Y) * d(Y)/d(Z)
    corr_w_k = corr_b * x_k
 ```
-The backward propagation is computed in opposite direction to the forward propagation. Starting from the output layer, the corrections are computed up to the first hidden layer.
+The backward propagation is computed in opposite direction to the forward propagation. Starting from the output layer, the corrections are computed up to the first hidden layer. The corrections to a given layer depend on the corrections to the following layer. 
 
+
+The following part will focus on error popagation in case of hidden layers with an example, but it is not necessary to use the neural network. To continue reading about the neural network go to the following section. 
+The example bellow shows the formula for the corrections of the last 2 layers of a given neural network.
+```
+Example:
+layers = [3, 4, 4, 1]
+loss = mean squared error
+activation = sigmoid
+
+corrections to the bias of the node i of output layer:
+corr_b[3, i] = d(loss)/d(Y[i]) * d(Y[i])/d(Z[i]) * d(Z[i])/d(b[3, i])
+1)  d(loss)/d(Y[i]) = 2 * (node[3, i] - Y_true[i])
+2)  d(Y[i])/d(Z[3, i]) = node[3, i] * (1 - node[3, i])
+3)  d(Z[3, i])/d(b[3, i]) = 1
+=> corr_b[3, i] = [ 2 * (node[3, i] - Y_true[i]) ] * [ node[3, i] * (1 - node[3, i]) ]
+
+corrections to the weight of the node i of output layer respect the node j of the previous layer:
+corr_w[3, i, j] = d(loss)/d(Y[i]) * d(Y[i])/d(Z[i]) * d(Z[i])/d(w[3, i, j])
+3)  d(Z[3, i])/d(w[3, i, j]) = node[2, j]
+=> corr_w[3, i, j] = corr_b[3, i] * node[2, j]
+
+corrections to the output layer parameters:
+=> corr_b[3] = [ 2 * (node[3] - Y_true) ] * [ node[3] * (1 - node[3]) ]
+   corr_w[3] = corr_b[3] @ node[2]     (@: outer product between vector)
+
+
+corrections to the second layer parameters:
+corr_b[2] = d(loss)/d(bias[2]) =
+            = d(loss)/d(node[3]) * d(node[3])/d(Z[3]) * d(Z[3])/d(node[2]) * d(node[2])/d(Z[2]) * d(Z[2])/d(bias[2])
+            = ( corr_b[3] * weight[2] ) * [ node[2] * (1 - node[2]) ] 
+
+=> corr_b[2] = ( corr_b[3] * weight[2] ) * [ node[2] * (1 - node[2]) ]
+   corr_w[2] = corr_b[2] @ node[1]
+
+...
+```
 
 
 
 
 ## Implementations
 
-### Requirements
+### Installation
+```
+$ git clone https://github.com/lucabeccatini/NeuralNetworksFromScratch.git
+$ cd NeuralNetworksFromScratch
+$ sudo pip3 install -r requirements.txt
+```
 
 
 ### Getting started
@@ -104,7 +146,7 @@ To use the neural network import NNHL.py. To create a neural network create an o
 model = NeuralNetwork(layers=[3, 4, 4, 1])
 ```
 
-Whit the definition of model also the following variables are defined:
+With the definition of model also the following attributes are defined:
 - model.b is an array containing all the biases, they are initialized to 0
 - model.w is an array containing all the weights, they are initialized with the heuristic weights inizialization
 - model.n is an array containing all the values of the nodes of the last prediction
@@ -122,28 +164,6 @@ model.weight([1, 0, 1])   returns the value of the weight that is multiplied to 
 ```
 
 
-### propagation method
-The propagation method is a method called inside the training and it computes the corrections to weights and biases. The corrections to a given layer depend on the corrections to the following layer. 
-
-The following example shows the formulas for the corrections of the last 2 layers of a given neural network.
-```
-Example:
-layers = [3, 4, 4, 1]
-loss = mean squared error
-activation = sigmoid
-
-corr_b[3] = d(loss)/d(Y) * d(Y)/d(Z) 
-               = [ 2 * (node[3] - Y_true) ] * [ node[3] * (1 - node[3]) ]
-corr_w[3] = corr_b[3] * node[2]
-
-corr_b[2] = d(loss)/d(bias[2]) =
-            = d(loss)/d(node[3]) * d(node[3])/d(Z[3]) * d(Z[3])/d(node[2]) * d(node[2])/d(Z[2]) * d(Z[2])/d(bias[2])
-            = ( corr_b[3] * weight[2] ) * [ node[2] * (1 - node[2]) ] 
-corr_w([2]) = corr_b[2] * node[1]
-
-...
-```
-
 ### fit method
 The fit method performs the training of the neural network. Its arguments are:
 - X_train: the input training dataset
@@ -152,7 +172,7 @@ The fit method performs the training of the neural network. Its arguments are:
 - Y_val: the true value of output validation dataset
 - epochs: the number of epochs of the training
 - batch_size: the number of events of each batch. The weights and biases are updated at the end of each batch
-- learn_rate 
+- learn_rate: learning rate
 - min_improvement: the minimum allowed difference between the validation loss of an epoch and the previous one
 - patience: the maximum number of not allowed validation loss before the early stopping of the training
 - shuffle: if True, the training dataset is shuffled at each epoch.
@@ -251,14 +271,14 @@ As we can see, the training plots are similar for NNFS and Keras.
 \
 In the first histogram, we can see that the predictions are in agreement for both NNFS and Keras with the true outputs. Moreover the the predictions are very similar between them, except for some statistical fluctuations. The second histogram represents the distribution of the ratio between true values and the NNFS predictions respect the true values. It shows that NNFS has a good accuracy (highly populated for Y_true/Y_pred_NNFS about 1) in correspondence of the peak of Y_true and it has a lower accuracy for events with lower probability, like events with small weights. The third histogram represents the same distributions respect the Keras predictions and it is very similar to the NNFS prediction.
 
-<img src="Images/Test3_hist_2x64x64x1.png" align="center" width="500" height="auto"/>
+<img src="Images/Test3_hist_5x64x64x1.png" align="center" width="500" height="auto"/>
 
 \
 
 
 
 ## Considerations
-The NNFS has good results, which are similar to the results of Keras. However, the training of NNFS is mumch more longer than the Keras one and it is much more sensible overtraining. Moreover sometimes it has problems with the batch size tuning. 
+The NNFS has good results, which are similar to the results of Keras. However, the training of NNFS is mumch more slower than the Keras one and it is much more sensible overtraining. Moreover sometimes it has problems with the batch size tuning. 
 
 Additional methods can be implemented to resolve different problems, like to implement convolutional neural network, or additional loss functions and activation functions.
 
