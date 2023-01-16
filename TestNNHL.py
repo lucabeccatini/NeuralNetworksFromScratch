@@ -73,25 +73,27 @@ if (test_2==True):
     seeds = [7]
 
     for seed_all in seeds:
+
         np.random.seed(seed_all) 
         tf.random.set_seed(seed_all) 
-
 
         # create training samples
         X_data, Y_data = datasets.make_moons(1000, noise = 0.2)
         X_train, X_val, Y_train, Y_val=train_test_split(X_data, Y_data, test_size=0.25, random_state=seed_all)
+        X_test, Y_test = datasets.make_moons(250, noise = 0.2)
 
         # define the neural network NNFS 
-        layers = [2, 2, 1]
+        layers = [2, 16, 16, 1]
         model_s = NNHL.NeuralNetwork(layers=layers, seed=7)
         model_s.activation = ['relu', 'sigmoid']
 
         # training NNFS
-        model_s.fit(X_train=X_train, Y_train=Y_train, X_val=X_val, Y_val=Y_val, epochs=1000, batch_size=100, learn_rate=0.01, patience=10, min_improvement=0)
+        model_s.fit(X_train=X_train, Y_train=Y_train, X_val=X_val, Y_val=Y_val, epochs=3000, batch_size=200, learn_rate=0.01, patience=10, min_improvement=0)
         
         # define the neural network Keras
         model_k = tf.keras.Sequential([
-            tf.keras.layers.Dense(2, activation='relu', input_shape = (2,)),
+            tf.keras.layers.Dense(16, activation='relu', input_shape = (2,)),
+            tf.keras.layers.Dense(16, activation='relu'),
             tf.keras.layers.Dense(1, activation='sigmoid')])
 
         # training Keras
@@ -111,53 +113,58 @@ if (test_2==True):
             fig, axs = plt.subplots(2, figsize=(8.27, 11.69))             
             axs[0].plot(model_s.loss_train, color='blue', label="training NNFS")
             axs[0].plot(model_s.loss_val, color='red', label="validation NNFS")
-            axs[0].set_title('model loss NNFS')
+            axs[0].set_title("Model loss of NNFS with layers: {}".format(layers))
             axs[0].set(xlabel="epoch", ylabel="loss")
+            axs[0].set_ylim(0.001, 1)
             axs[0].set_yscale('log')
             axs[0].legend(['Train', 'Validation'], loc='best')
-            axs[1].plot(history.history['loss'], color='blue', label="training Keras")
-            axs[1].plot(history.history['val_loss'], color='red', label="validation Keras")
-            axs[1].set_title('model loss Keras')
-            axs[1].set(xlabel="epoch", ylabel="loss")
-            axs[1].set_yscale('log')
-            axs[1].legend(['Train', 'Validation'], loc='best')
-            pdf.savefig(fig)
-            
+
             # plot decision region
-            x_min = X_train[:, 0].min() - 0.5                                        # x and y limit for the grid
-            x_max = X_train[:, 0].max() + 0.5 
-            y_min = X_train[:, 1].min() - 0.5
-            y_max = X_train[:, 1].max() + 0.5
+            x_min = X_test[:, 0].min() - 0.5                                        # x and y limit for the grid
+            x_max = X_test[:, 0].max() + 0.5 
+            y_min = X_test[:, 1].min() - 0.5
+            y_max = X_test[:, 1].max() + 0.5
             res = 0.1
             xx, yy = np.meshgrid(np.arange(x_min, x_max, res), np.arange(y_min, y_max, res))   # create a grid that covers the samples
             X_grid = np.c_[xx.ravel(), yy.ravel()]
-            Y_pred_s = np.empty(len(X_grid)) 
+            Y_grid_s = np.empty(len(X_grid)) 
             for i in range(len(X_grid)):
-                Y_pred_s[i] = model_s.predict(X_grid[i])                                 # predicted outputs over the grid
-            Y_pred_k = np.empty(len(X_grid)) 
-            Y_pred_k = model_k.predict(X_grid)
-            Y_grid_s = np.reshape(Y_pred_s, xx.shape)
-            Y_grid_k = np.reshape(Y_pred_k, xx.shape)
-            fig, axs = plt.subplots(2, figsize=(8.27, 11.69))             
-            axs[0].scatter(X_data[:,0], X_data[:,1], c=Y_data, cmap=plt.cm.Spectral)
-            axs[0].contourf(xx, yy, Y_grid_s, levels=[0, 0.5, 1], alpha = 0.5)
-            axs[0].set_title("Decision region plot of NNFS with layers: {}".format(layers))
-            axs[1].scatter(X_data[:,0], X_data[:,1], c=Y_data, cmap=plt.cm.Spectral)
-            axs[1].contourf(xx, yy, Y_grid_k, levels=[0, 0.5, 1], alpha = 0.5)
-            axs[1].set_title("Decision region plot of Keras with layers: {}".format(layers))
+                Y_grid_s[i] = model_s.predict(X_grid[i])                                 # predicted outputs over the grid
+            Y_grid_s = np.reshape(Y_grid_s, xx.shape)
+            Y_pred_s = np.empty(len(X_test))
+            for i in range(len(X_test)):
+                Y_pred_s[i] = model_s.predict(X_test[i])                                 # predicted outputs over the grid
+            Y_pred_s = np.rint(Y_pred_s)
+            acc_test_s = 1 - np.sum(np.abs(Y_test - Y_pred_s))/len(Y_test)
+            axs[1].scatter(X_test[:,0], X_test[:,1], c=Y_test, cmap=plt.cm.Spectral)
+            axs[1].contourf(xx, yy, Y_grid_s, levels=[0, 0.5, 1], alpha = 0.5)
+            axs[1].set_title("Decision region plot of NNFS with layers: {}".format(layers))
+            axs[1].legend(title="test accuracy: {:.4f}".format(acc_test_s), loc='best')
+
             pdf.savefig(fig)
 
+            fig, axs = plt.subplots(2, figsize=(8.27, 11.69))             
+            axs[0].plot(history.history['loss'], color='blue', label="training Keras")
+            axs[0].plot(history.history['val_loss'], color='red', label="validation Keras")
+            axs[0].set_title("Model loss of Keras with layers: {}".format(layers))
+            axs[0].set(xlabel="epoch", ylabel="loss")
+            axs[0].set_ylim(0.001, 1)
+            axs[0].set_yscale('log')
+            axs[0].legend(['Train', 'Validation'], loc='best')
 
-        # print weights NNFS vs Keras
-        if False:
-            for i in range(len(layers)-1):
-                w_s = model_s.weight([i+1])
-                b_s = model_s.bias([i+1])
-                w_k, b_k = model_k.layers[i].get_weights()
-                for j in range(layers[i+1]):
-                    print("\nLayer: {}   node: {}".format(i+1, j+1))
-                    print("NNFS      weights:{}   bias: {}".format(w_s[j], b_s[j]))
-                    print("KERAS     weights:{}   bias: {}".format(w_k.transpose()[j], b_k[j]))
+            Y_grid_k = np.empty(len(X_grid)) 
+            Y_grid_k = model_k.predict(X_grid)
+            Y_grid_k = np.reshape(Y_grid_k, xx.shape)
+            Y_pred_k = model_k.predict(X_test)
+            Y_pred_k = np.reshape(Y_pred_k, (len(Y_pred_k)))
+            Y_pred_k = np.rint(Y_pred_k)
+            acc_test_k = 1 - np.sum(np.abs(Y_test - Y_pred_k))/len(Y_test)
+            axs[1].scatter(X_test[:,0], X_test[:,1], c=Y_test, cmap=plt.cm.Spectral)
+            axs[1].contourf(xx, yy, Y_grid_k, levels=[0, 0.5, 1], alpha = 0.5)
+            axs[1].set_title("Decision region plot of Keras with layers: {}".format(layers))
+            axs[1].legend(title="test accuracy: {:.4f}".format(acc_test_k), loc='best')
+
+            pdf.savefig(fig)
 
 
 
@@ -170,7 +177,7 @@ if (test_2==True):
 if (test_3==True):
 
     seed_all = 7
-    layers = [5, 64, 64, 1]
+    layers = [5, 64, 64, 64, 1]
 
     # reading dataset
     data = np.empty((16000, 7)) 
@@ -207,11 +214,11 @@ if (test_3==True):
     X_data[:, 2] = data[:, 0] / E_cm_int
     X_data[:, 3] = data[:, 1] / E_cm_int 
     X_data[:, 4] = (-(beta_int/np.sqrt(1-beta_int**2))*data[:, 3] + (1/np.sqrt(1-beta_int**2))*data[:, 2]) / E_cm_int
-    X_train, X_val = X_data[:-4000, :], X_data[-4000:, :]
+    X_train, X_val, X_test = X_data[:-4000, :], X_data[-4000:-2000, :], X_data[-2000:, :]
 
 
     # output inizialization
-    Y_train, Y_val = data[:-4000, -1], data[-4000:, -1]
+    Y_train, Y_val, Y_test = data[:-4000, -1], data[-4000:-2000, -1], data[-2000:, -1]
 
 
     # define the model
@@ -222,11 +229,12 @@ if (test_3==True):
     model_k = tf.keras.Sequential([
         tf.keras.layers.Dense(64, activation='relu', input_shape = (5, )),
         tf.keras.layers.Dense(64, activation='relu'),
+        tf.keras.layers.Dense(64, activation='relu'),
         tf.keras.layers.Dense(1, activation='linear')
         ])
 
 
-    # training and test
+    # training
     model_s.fit(X_train=X_train, Y_train=np.abs(np.log(Y_train)), X_val=X_val, Y_val=np.abs(np.log(Y_val)), epochs=100, batch_size=10, learn_rate=0.01, patience=30, min_improvement=0)
 
     model_k.compile(optimizer='adam', loss='mse') 
@@ -234,13 +242,13 @@ if (test_3==True):
     history = model_k.fit(X_train, np.abs(np.log(Y_train)), validation_data=(X_val, np.abs(np.log(Y_val))), batch_size=1000, epochs=100, callbacks=[callback])         # predict the abs(log(w))
 
 
-    # prediction
-    Y_pred_s = np.empty_like(Y_val)
-    for i in range(len(X_val)):
-        Y_pred_s[i] = model_s.predict(X_val[i])                                 # predicted outputs over the grid
+    # prediction on test dataset
+    Y_pred_s = np.empty_like(Y_test)
+    for i in range(len(X_test)):
+        Y_pred_s[i] = model_s.predict(X_test[i])                                 # predicted outputs over the grid
     Y_pred_s = np.e**(-Y_pred_s)                         # model predict -log(w)
 
-    Y_pred_k = model_k.predict(X_val)
+    Y_pred_k = model_k.predict(X_test)
     Y_pred_k = np.reshape(Y_pred_k, len(Y_pred_k))
     Y_pred_k = np.e**(-Y_pred_k)                         # model predict -log(w)
 
@@ -253,45 +261,53 @@ if (test_3==True):
     with PdfPages("{}/PlotWeights_layers{}_seed{}.pdf".format(path, save_layers, seed_all)) as pdf: 
 
         # plot training and validation
-        fig, axs = plt.subplots(2, figsize=(8.27, 11.69))             
+        fig, axs = plt.subplots(3, figsize=(8.27, 11.69)) 
         axs[0].plot(model_s.loss_train, color='blue', label="training NNFS")
         axs[0].plot(model_s.loss_val, color='red', label="validation NNFS")
-        axs[0].set_title('model loss NNFS')
+        axs[0].set_title("Model loss of NNFS with layers: {}".format(layers))
         axs[0].set(xlabel="epoch", ylabel="loss")
         axs[0].set_yscale('log')
         axs[0].legend(['Train', 'Validation'], loc='best')
-        axs[1].plot(history.history['loss'], color='blue', label="training Keras")
-        axs[1].plot(history.history['val_loss'], color='red', label="validation Keras")
-        axs[1].set_title('model loss Keras')
-        axs[1].set(xlabel="epoch", ylabel="loss")
+
+        bins_Y = np.logspace(np.log10(0.0001), np.log10(0.003), 50)
+        axs[1].set(xlabel="Y", ylabel="dN/d(Y)")
+        axs[1].hist(x=Y_test, bins=bins_Y, label="Y_true", color='purple', histtype='step', lw=3, alpha=0.5)
+        axs[1].hist(x=Y_pred_s, bins=bins_Y, label="Y_pred_NNFS", color='green', histtype='step', lw=3, alpha=0.5)
+        axs[1].set_xscale('log')
         axs[1].set_yscale('log')
-        axs[1].legend(['Train', 'Validation'], loc='best')
+        axs[1].legend(loc='best')
+
+        bins_YY = np.logspace(np.log10(10**(-2)), np.log10(10**(2)), 50)
+        axs[2].set(xlabel="Y_true", ylabel="Y_true/Y_pred_NNFS")
+        h2 = axs[2].hist2d(Y_test, Y_test/Y_pred_s, bins=[bins_Y, bins_YY])
+        axs[2].set_xscale('log')
+        axs[2].set_yscale('log')
+        plt.colorbar(h2[3], ax=axs[2]) 
+
         pdf.savefig(fig)
+
 
         # plot histograms of predictions
         fig, axs = plt.subplots(3, figsize=(8.27, 11.69)) 
-        bins_Y = np.logspace(np.log10(0.0001), np.log10(0.003), 50)
-        axs[0].set(xlabel="Y", ylabel="dN/d(Y)")
-        axs[0].hist(x=Y_val, bins=bins_Y, label="Y_true", color='purple', histtype='step', lw=3, alpha=0.5)
-        axs[0].hist(x=Y_pred_s, bins=bins_Y, label="Y_pred_NNFS", color='green', histtype='step', lw=3, alpha=0.5)
-        axs[0].hist(x=Y_pred_k, bins=bins_Y, label="Y_pred_Keras", color='orange', histtype='step', lw=3, alpha=0.5)
-        axs[0].set_xscale('log')
-        axs[0].set_yscale('log')
-        axs[0].legend(loc='best')
 
-        bins_YY = np.logspace(np.log10(10**(-2)), np.log10(10**(2)), 50)
-        axs[1].set(xlabel="Y_true", ylabel="Y_true/Y_pred_NNFS")
-        h2 = axs[1].hist2d(Y_val, Y_val/Y_pred_s, bins=[bins_Y, bins_YY])
+        axs[0].plot(history.history['loss'], color='blue', label="training Keras")
+        axs[0].plot(history.history['val_loss'], color='red', label="validation Keras")
+        axs[0].set_title("Model loss of Keras with layers: {}".format(layers))
+        axs[0].set(xlabel="epoch", ylabel="loss")
+        axs[0].set_yscale('log')
+        axs[0].legend(['Train', 'Validation'], loc='best')
+
+        axs[1].set(xlabel="Y", ylabel="dN/d(Y)")
+        axs[1].hist(x=Y_test, bins=bins_Y, label="Y_true", color='purple', histtype='step', lw=3, alpha=0.5)
+        axs[1].hist(x=Y_pred_k, bins=bins_Y, label="Y_pred_Keras", color='orange', histtype='step', lw=3, alpha=0.5)
         axs[1].set_xscale('log')
         axs[1].set_yscale('log')
-        #axs[1].set_title(label="NNFS predictions")
-        plt.colorbar(h2[3], ax=axs[1]) 
+        axs[1].legend(loc='best')
 
         axs[2].set(xlabel="Y_true", ylabel="Y_true/Y_pred_Keras")
-        h3 = axs[2].hist2d(Y_val, Y_val/Y_pred_k, bins=[bins_Y, bins_YY])
+        h3 = axs[2].hist2d(Y_test, Y_test/Y_pred_k, bins=[bins_Y, bins_YY])
         axs[2].set_xscale('log')
         axs[2].set_yscale('log')
-        #axs[2].set_title(label="Keras predictions")
         plt.colorbar(h3[3], ax=axs[2]) 
 
         pdf.savefig(fig)
