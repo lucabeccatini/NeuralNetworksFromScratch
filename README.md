@@ -219,26 +219,33 @@ X_train[[3]] = [0, 1, 0],    Y_train[[3]] = 1
 
 ### Test 2
 The second test is a classification problem which uses the make_moons dataset of sklearn. 
-In these examples, the activation functions used are: relu for the hidden layers and sigmoid for the output layer. The neural networks are trained with the training and validation datasets and they are tested against a test dataset, that is represented in the plots with the accuracy of the test in the legend. Moreover, the neural networks predict over a grid on the plot to show the decision regions. The first 4 plots are obtained from neural networks with 1 hidden layer and the following 3 plots are obtained from neural networks with 2 hidden layers
+In these examples, the activation functions used are: relu for the hidden layers and sigmoid for the output layer. The neural networks are trained with the training and validation datasets and they are tested against a test dataset, that is represented in the plots with the accuracy of the test in the legend. Moreover, the neural networks predict over a grid on the plot to show the decision regions. The first 4 plots are obtained from neural networks with 1 hidden layer
 
-<img src="Images/Test2_NNFS_2x2x1.png" align="center" width="180" height="auto"/>
-<img src="Images/Test2_NNFS_2x4x1.png" align="center" width="180" height="auto"/>
-<img src="Images/Test2_NNFS_2x8x1.png" align="center" width="180" height="auto"/>
-<img src="Images/Test2_NNFS_2x16x1.png" align="center" width="180" height="auto"/>
+<img src="Images/Test2_NNFS_2x2x1.png" align="center" width="400" height="auto"/>
+<img src="Images/Test2_NNFS_2x4x1.png" align="center" width="400" height="auto"/>
 
 \
-<img src="Images/Test2_NNFS_2x4x4x1.png" align="center" width="180" height="auto"/>
-<img src="Images/Test2_NNFS_2x8x8x1.png" align="center" width="180" height="auto"/>
-<img src="Images/Test2_NNFS_2x16x16x1.png" align="center" width="180" height="auto"/>
+<img src="Images/Test2_NNFS_2x8x1.png" align="center" width="400" height="auto"/>
+<img src="Images/Test2_NNFS_2x16x1.png" align="center" width="400" height="auto"/>
+
+The following 3 plots are obtained from neural networks with 2 hidden layers
+
+<img src="Images/Test2_NNFS_2x4x4x1.png" align="center" width="400" height="auto"/>
+<img src="Images/Test2_NNFS_2x8x8x1.png" align="center" width="400" height="auto"/>
+
+\
+<img src="Images/Test2_NNFS_2x16x16x1.png" align="center" width="400" height="auto"/>
 
 We can notice that the better result with 1 hidden layer is for the configuration [2, 4, 1] which separetes very well the two moons, due to the shape of its decision region. While for 2 hidden layers the results are almost the same, except for the slightly lower accuracy for the last test, which seems to suggest a larger overtraining than the other tests.
 
 Now, to check the correctness, we can compare the results of NNFS with the results of Keras. We expect almost the same results, except for some differences due to statistical fluctuations (they have different seed of weight initialization) and due to the optimizer SGD of Keras. 
 
-<img src="Images/Test2_Keras_2x4x1.png" align="center" width="180" height="auto"/>
-<img src="Images/Test2_Keras_2x16x1.png" align="center" width="180" height="auto"/>
-<img src="Images/Test2_Keras_2x8x8x1.png" align="center" width="180" height="auto"/>
-<img src="Images/Test2_Keras_2x16x16x1.png" align="center" width="180" height="auto"/>
+<img src="Images/Test2_Keras_2x4x1.png" align="center" width="400" height="auto"/>
+<img src="Images/Test2_Keras_2x16x1.png" align="center" width="400" height="auto"/>
+
+\
+<img src="Images/Test2_Keras_2x8x8x1.png" align="center" width="400" height="auto"/>
+<img src="Images/Test2_Keras_2x16x16x1.png" align="center" width="400" height="auto"/>
 
 
 From the training plots, we can notice that the NNFS loss is smooth almost as the Keras loss but it decreases faster than the Keras loss. Moreover the training of the NNFS undergoes early stopping much earlier than Keras, even if they have the same patience and minimum improvement. From the plots of the decision regions we can notice that in the case of 1 hidden layers, the results of keras have less accuracy, while fort 2 hidden layers they are almost the same.
@@ -264,23 +271,27 @@ Inputs:
 ```
 In this way the inputs are normalized between 0 and 1. The outputs are the absolute value of the logaritm of the weights. The reason is that the weights are of the order of 0.001 and it is easier for the neural network to predict larger values than values close to 0. The activation functions are relu for the hidden layers and linear for the output layer. The epochs are set at 100 to avoid long training time, due to the slowness of NNFS with a large number of parameters. The predictions are performed over the same test dataset for all the neural networks. The first 3 images are obtained with 2 hidden layers and the following 3 images with 3 hidden layers
 
-<img src="Images/Test3_NNFS_5x16x16x1.png" align="center" width="250" height="auto"/>
-<img src="Images/Test3_NNFS_5x32x32x1.png" align="center" width="250" height="auto"/>
-<img src="Images/Test3_NNFS_5x64x64x1.png" align="center" width="250" height="auto"/>
+<img src="Images/Test3_NNFS_5x16x16x1.png" align="center" width="400" height="auto"/>
+<img src="Images/Test3_NNFS_5x32x32x1.png" align="center" width="400" height="auto"/>
 
 \
-<img src="Images/Test3_NNFS_5x16x16x16x1.png" align="center" width="250" height="auto"/>
-<img src="Images/Test3_NNFS_5x32x32x32x1.png" align="center" width="250" height="auto"/>
-<img src="Images/Test3_NNFS_5x64x64x64x1.png" align="center" width="250" height="auto"/>
+<img src="Images/Test3_NNFS_5x64x64x1.png" align="center" width="400" height="auto"/>
+<img src="Images/Test3_NNFS_5x16x16x16x1.png" align="center" width="400" height="auto"/>
+
+\
+<img src="Images/Test3_NNFS_5x32x32x32x1.png" align="center" width="400" height="auto"/>
+<img src="Images/Test3_NNFS_5x64x64x64x1.png" align="center" width="400" height="auto"/>
 
 \
 Firstly, we can notice that the training plots are almost the same between the tests. The histogram represents the distribution of the true and predicted weights, which are the predicted outputs after the ritransofrmation. The predictions are quite simlar to the true distribution, with some disagreement for the tails and for the largest values, where there is a drop. The 2d histogram represents the distribution of the ratio between true values and the predictions respect the true values. In the best scenario, we would expect a flattened horizontal line highly populated. From the plots we can say that the neural networks with the best results are those with 64 nodes in the hidden layers, with small differences between the one with 2 hidden layers and the one with 3 hidden layers. 
 
 To check the correctness of the NNFS distribution, we can compare them with the distribution of Keras using the same settings, except that in this case we used the Adam optimizer.
 
-<img src="Images/Test3_Keras_5x16x16x1.png" align="center" width="250" height="auto"/>
-<img src="Images/Test3_Keras_5x64x64x1.png" align="center" width="250" height="auto"/>
-<img src="Images/Test3_Keras_5x64x64x64x1.png" align="center" width="250" height="auto"/>
+<img src="Images/Test3_Keras_5x16x16x1.png" align="center" width="400" height="auto"/>
+<img src="Images/Test3_Keras_5x64x64x1.png" align="center" width="400" height="auto"/>
+
+\
+<img src="Images/Test3_Keras_5x64x64x64x1.png" align="center" width="400" height="auto"/>
 
 We can see that the Keras predictions have similar results to the NNFS predictions and both predictions are in agreement.
 
